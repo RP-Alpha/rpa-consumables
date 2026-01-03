@@ -32,6 +32,22 @@ RegisterNetEvent('rpa-consumables:server:updateStatus', function(type, amount)
             if new > 100 then new = 100 end
             Player.Functions.SetMetaData('thirst', new)
             TriggerClientEvent('hud:client:UpdateNeeds', src, Player.PlayerData.metadata['hunger'], new)
+        elseif type == 'alcohol' then
+             local newThirst = Player.PlayerData.metadata['thirst'] + amount -- Alcohol hydrates? usually dehydrates but lets say hydrates for now or use negative
+             if newThirst > 100 then newThirst = 100 end
+             Player.Functions.SetMetaData('thirst', newThirst)
+             
+             -- Stress (Negative amount passed in config means relieve)
+             local newStress = (Player.PlayerData.metadata['stress'] or 0) + (amount or 0) -- Re-check logic on amount passed
+             if newStress < 0 then newStress = 0 end
+             Player.Functions.SetMetaData('stress', newStress)
+             
+             TriggerClientEvent('hud:client:UpdateNeeds', src, Player.PlayerData.metadata['hunger'], newThirst)
+        elseif type == 'smoke' then
+             -- Stress only
+             local newStress = (Player.PlayerData.metadata['stress'] or 0) + (amount or 0)
+             if newStress < 0 then newStress = 0 end
+             Player.Functions.SetMetaData('stress', newStress)
         end
     end
 end)
