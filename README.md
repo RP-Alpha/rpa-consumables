@@ -22,12 +22,19 @@
 
 ---
 
+## � Dependencies
+
+- `rpa-lib` (Required)
+
+---
+
 ## 📥 Installation
 
 1. Download the [latest release](https://github.com/RP-Alpha/rpa-consumables/releases/latest)
 2. Extract to your `resources` folder
 3. Add to `server.cfg`:
    ```cfg
+   ensure rpa-lib
    ensure rpa-consumables
    ```
 
@@ -35,19 +42,38 @@
 
 ## ⚙️ Configuration
 
-Add items in `config.lua`:
-
 ```lua
-Config.Items = {
+Config.Consumables = {
+    ['sandwich'] = {
+        type = 'food',
+        hunger = 50,
+        model = 'prop_sandwich_01',
+        animation = 'eat'
+    },
     ['beer'] = {
         type = 'alcohol',
         thirst = 15,
         stress = -10,
         model = 'prop_amb_beer_bottle',
         animation = 'drink'
+    },
+    ['joint'] = {
+        type = 'smoke',
+        stress = -25,
+        model = 'prop_sh_joint_01',
+        animation = 'smoke'
     }
 }
 ```
+
+### Item Types
+
+| Type | Effects |
+|------|--------|
+| `food` | Restores hunger |
+| `drink` | Restores thirst |
+| `alcohol` | Thirst + stress relief + drunk effects |
+| `smoke` | Stress relief + particles |
 
 ---
 
