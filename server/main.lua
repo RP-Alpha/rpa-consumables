@@ -1,9 +1,18 @@
+-- Get player helper
+local function GetPlayer(src)
+    local Framework = exports['rpa-lib']:GetFramework()
+    if Framework then
+        return Framework.Functions.GetPlayer(src)
+    end
+    return nil
+end
+
 -- Register Items as usable
 CreateThread(function()
     local fw = exports['rpa-lib']:GetFramework()
     local fwName = exports['rpa-lib']:GetFrameworkName()
     
-    if fwName == 'qb-core' then
+    if fwName == 'qb-core' or fwName == 'qbox' then
         for name, data in pairs(Config.Consumables) do
             fw.Functions.CreateUseableItem(name, function(source, item)
                 local Player = fw.Functions.GetPlayer(source)
@@ -15,39 +24,48 @@ CreateThread(function()
     end
 end)
 
-RegisterNetEvent('rpa-consumables:server:updateStatus', function(type, amount)
+-- Update player status with proper data handling
+RegisterNetEvent('rpa-consumables:server:updateStatus', function(data)
     local src = source
-    local fw = exports['rpa-lib']:GetFramework()
     local fwName = exports['rpa-lib']:GetFrameworkName()
 
-    if fwName == 'qb-core' then
-        local Player = fw.Functions.GetPlayer(src)
-        if type == 'food' then
-            local new = Player.PlayerData.metadata['hunger'] + amount
-            if new > 100 then new = 100 end
-            Player.Functions.SetMetaData('hunger', new)
-            TriggerClientEvent('hud:client:UpdateNeeds', src, new, Player.PlayerData.metadata['thirst'])
-        elseif type == 'drink' then
-            local new = Player.PlayerData.metadata['thirst'] + amount
-            if new > 100 then new = 100 end
-            Player.Functions.SetMetaData('thirst', new)
-            TriggerClientEvent('hud:client:UpdateNeeds', src, Player.PlayerData.metadata['hunger'], new)
-        elseif type == 'alcohol' then
-             local newThirst = Player.PlayerData.metadata['thirst'] + amount -- Alcohol hydrates? usually dehydrates but lets say hydrates for now or use negative
-             if newThirst > 100 then newThirst = 100 end
-             Player.Functions.SetMetaData('thirst', newThirst)
-             
-             -- Stress (Negative amount passed in config means relieve)
-             local newStress = (Player.PlayerData.metadata['stress'] or 0) + (amount or 0) -- Re-check logic on amount passed
-             if newStress < 0 then newStress = 0 end
-             Player.Functions.SetMetaData('stress', newStress)
-             
-             TriggerClientEvent('hud:client:UpdateNeeds', src, Player.PlayerData.metadata['hunger'], newThirst)
-        elseif type == 'smoke' then
-             -- Stress only
-             local newStress = (Player.PlayerData.metadata['stress'] or 0) + (amount or 0)
-             if newStress < 0 then newStress = 0 end
-             Player.Functions.SetMetaData('stress', newStress)
+    if fwName == 'qb-core' or fwName == 'qbox' then
+        local Player = GetPlayer(src)
+        if not Player then return end
+        
+        local itemType = data.type
+        local hunger = data.hunger or 0
+        local thirst = data.thirst or 0
+        local stress = data.stress or 0
+        
+        -- Get current values
+        local currentHunger = Player.PlayerData.metadata['hunger'] or 0
+        local currentThirst = Player.PlayerData.metadata['thirst'] or 0
+        local currentStress = Player.PlayerData.metadata['stress'] or 0
+        
+        if itemType == 'food' then
+            local newHunger = math.min(100, currentHunger + hunger)
+            Player.Functions.SetMetaData('hunger', newHunger)
+            TriggerClientEvent('hud:client:UpdateNeeds', src, newHunger, currentThirst)
+            
+        elseif itemType == 'drink' then
+            local newThirst = math.min(100, currentThirst + thirst)
+            Player.Functions.SetMetaData('thirst', newThirst)
+            TriggerClientEvent('hud:client:UpdateNeeds', src, currentHunger, newThirst)
+            
+        elseif itemType == 'alcohol' then
+            -- Alcohol: increases thirst, reduces stress
+            local newThirst = math.min(100, currentThirst + thirst)
+            local newStress = math.max(0, currentStress + stress) -- stress is negative in config
+            
+            Player.Functions.SetMetaData('thirst', newThirst)
+            Player.Functions.SetMetaData('stress', newStress)
+            TriggerClientEvent('hud:client:UpdateNeeds', src, currentHunger, newThirst)
+            
+        elseif itemType == 'smoke' then
+            -- Smoking: only affects stress
+            local newStress = math.max(0, currentStress + stress) -- stress is negative in config
+            Player.Functions.SetMetaData('stress', newStress)
         end
     end
 end)
