@@ -1,5 +1,23 @@
 Config = {}
 
+-- ============================================
+-- PERMISSION CONFIGURATION
+-- ============================================
+
+-- Admin permissions (can add/remove consumables via command)
+Config.AdminPermissions = {
+    groups = { 'admin', 'god' },
+    jobs = {},
+    minGrade = 0,
+    onDuty = false,
+    convar = 'rpa:admins',
+    resourceConvar = 'admin'
+}
+
+-- ============================================
+-- CONSUMABLE ITEMS
+-- ============================================
+
 Config.Consumables = {
     ['sandwich'] = {
         type = 'food',
